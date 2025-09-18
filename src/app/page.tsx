@@ -82,6 +82,7 @@ export default function Home() {
           variants={fadeIn}
           custom={3}
         >
+          
         </motion.div>
 
         <ModelExplorer />

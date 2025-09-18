@@ -4,9 +4,13 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
 
   // Read params from the request URL
-  const searchTerm = searchParams.get("search") || "deepseek";
-  const sortBy = searchParams.get("sort") || "trending";
+  const searchTerm = searchParams.get("search") || "";
+  const sortBy = searchParams.get("sort") || "";
   const withCount = searchParams.get("withCount") || "true";
+
+  if (!searchTerm.trim()) {
+    return NextResponse.json({data: [], message: "Search to find your model"});
+  }
 
   // Construct the Hugging Face API URL dynamically
   const url = `https://huggingface.co/models-json?sort=${sortBy}&search=${searchTerm}&withCount=${withCount}`;

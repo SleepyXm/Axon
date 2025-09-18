@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 
 interface Model {
   id: string;
@@ -17,7 +18,7 @@ interface Model {
 
 export default function ModelExplorer() {
   const [models, setModels] = useState<Model[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // 🔹 Controls
@@ -48,33 +49,38 @@ export default function ModelExplorer() {
     return "red";
   }
 
-  useEffect(() => {
-    const fetchModels = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  const fetchModels = async () => {
+    if (!searchTerm.trim()) {
+      setModels([]);
+      return;
+    }
 
-        const res = await fetch(
-          `/api/models?search=${encodeURIComponent(
-            searchTerm
-          )}&sort=${sortBy}&withCount=true`
-        );
+    try {
+      setLoading(true);
+      setError(null);
 
-        if (!res.ok) throw new Error("Failed to fetch models");
-        const data = await res.json();
-        setModels(data.models || []);
-      } catch (err: any) {
-        setError(err.message || "Unknown error");
-      } finally {
-        setLoading(false);
-      }
-    };
+      const res = await fetch(
+        `/api/models?search=${encodeURIComponent(
+          searchTerm
+        )}&sort=${sortBy}&withCount=true`
+      );
 
-    fetchModels();
-  }, [searchTerm, sortBy]);
+      if (!res.ok) throw new Error("Failed to fetch models");
+
+      const data = await res.json();
+      setModels(data.models || []);
+    } catch (err: any) {
+      setError(err.message || "Unknown error");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="p-4 font-manrope bg-black/60 backdrop-blur rounded-2xl shadow-2xl">
+    <motion.div className="p-4 bg-black/60 backdrop-blur rounded-2xl shadow-2xl overflow-hidden"
+    layout
+    transition={{ duration: 0.2, ease: "easeInOut" }}
+    style={{width: "fit-content", maxWidth:"100%"}}>
       <h2 className="text-xl font-bold mb-4 text-white text-center">
         Hugging Face Models Explorer
       </h2>
@@ -102,7 +108,7 @@ export default function ModelExplorer() {
           </select>
 
           <button
-            onClick={() => {}}
+            onClick={() => {fetchModels();}}
             className="inline-flex items-center gap-2 px-3 h-9 rounded-lg bg-blue-400 text-black hover:bg-blue-300 transition"
           >
             Search
@@ -125,8 +131,6 @@ export default function ModelExplorer() {
       </div>
 
       {loading && <p>Loading models...</p>}
-      {error && <p style={{ color: "red" }}>Error: {error}</p>}
-
       {/* Grid of models */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {models.map((model) => (
@@ -140,7 +144,7 @@ export default function ModelExplorer() {
               className="w-10 h-10 rounded-full mb-2"
             />
             <a
-              href={`Preview9/model/${model.id}`}
+              href={`/model/${model.id}`}
               className="font-bold text-white hover:text-orange-500 transition-colors mb-1"
             >
               {model.id}
@@ -166,6 +170,6 @@ export default function ModelExplorer() {
           </div>
         ))}
       </div>
-    </div>
+    </motion.div>
   );
 }

@@ -11,7 +11,7 @@ type ClientWrapperProps = {
 
 export default function ClientWrapper({ children }: ClientWrapperProps) {
   const pathname = usePathname();
-  const [user, setUser] = useState(false);
+  const [user, setUser] = useState<boolean | null>(null);
 
   useEffect(() => {
     checkAuth().then(setUser);
@@ -21,8 +21,8 @@ export default function ClientWrapper({ children }: ClientWrapperProps) {
 
   return (
     <>
-      {showNav && <Navbar user={user} />} {/* pass it directly */}
-      {children} {/* leave children untouched */}
+      {showNav && user !== null && <Navbar user={user} />}
+      {children}
     </>
   );
 }

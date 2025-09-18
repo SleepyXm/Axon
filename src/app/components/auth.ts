@@ -55,3 +55,18 @@ export function getProtected(path: string) {
   // Example: hit /profile or /conversations with cookie
   return request(path, { method: "GET" });
 }
+
+/*
+export async function pushToBackend(messages: Message[]) {
+    await fetch("/llm/chat/conversation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            user_id: currentUserId,
+            llm_model: modelId,
+            messages: messages,
+        }),
+    });
+}
+
+*/
