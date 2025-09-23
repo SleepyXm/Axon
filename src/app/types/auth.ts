@@ -1,6 +1,6 @@
 const API_BASE = "http://localhost:8000";
 
-async function request(path: string, options: RequestInit) {
+export async function request(path: string, options: RequestInit) {
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     credentials: "include", // send/receive cookies
@@ -63,31 +63,6 @@ export function getProtected(path: string) {
   // Example: hit /profile or /conversations with cookie
   return request(path, { method: "GET" });
 }
-
-export async function addHfToken(token: string): Promise<string[]> {
-  const res = await request("/auth/hf_token", {
-    method: "POST",
-    body: JSON.stringify({ hf_token: token }),
-    credentials: "include",
-  });
-
-  if (!res) throw new Error("Failed to add HF token");
-
-  return res.hf_token ?? [];
-}
-
-export async function deleteHfToken(token: string): Promise<string[]> {
-  const res = await request("/auth/hf_token", {
-    method: "DELETE",
-    body: JSON.stringify({ hf_token: token }),
-    credentials: "include",
-  });
-
-  // assume server returns the new list or at least a success flag
-  if (!res) throw new Error("Failed to delete HF token");
-
-  return res.hf_token ?? []; // fallback to empty array if undefined
-}
 /*
 export async function pushToBackend(messages: Message[]) {
     await fetch("/llm/chat/conversation", {
@@ -102,56 +77,3 @@ export async function pushToBackend(messages: Message[]) {
 }
 
 */
-
-
-
-export interface FavLLMRequest {
-  llm_id: string;
-}
-
-export interface FavLLMResponse {
-  status: "success" | "error";
-  message: string;
-}
-
-export async function addFavLLM(llmId: string): Promise<FavLLMResponse> {
-  try {
-    const data: FavLLMResponse = await request("/auth/add_fav", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ hf_id: llmId }), // backend expects hf_id
-    });
-
-    // If your request util throws on non-2xx, this line may never run
-    return data;
-  } catch (err: any) {
-    // err might already be the parsed JSON error from the server
-    console.error("Failed to favorite LLM:", err?.detail || err?.message || err);
-    throw err; // rethrow so caller knows it failed
-  }
-}
-
-export async function removeFavLLM(hfId: string): Promise<FavLLMResponse> {
-  const res = await request("/auth/remove_fav", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ hf_id: hfId }), // <-- matches backend
-  });
-
-  if (!res.ok) {
-    // Try to parse JSON error, fallback to generic
-    let errMsg = "Failed to add favorite";
-    try {
-      const errData = await res.json();
-      errMsg = errData.detail || errMsg;
-    } catch {
-      // ignore parsing error
-    }
-    throw new Error(errMsg);
-  }
-
-  const data: FavLLMResponse = await res.json();
-  return data;
-}

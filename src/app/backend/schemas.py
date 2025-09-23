@@ -1,20 +1,7 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Any, Dict
 from uuid import UUID
-
-class MessageCreate(BaseModel):
-    message: str
-    role: str  # 'user' or 'assistant'
-
-class MessageOut(BaseModel):
-    id: str
-    message: str
-    role: str
-    created_at: datetime
-
-    class Config:
-        orm_mode = True
 
 class UserCreate(BaseModel):
     username: str
@@ -48,7 +35,16 @@ class Message(BaseModel):
     role: str
     content: str
 
-
 class ChatRequest(BaseModel):
     modelId: str
     conversation: list[Message]
+
+
+class MessageOut(BaseModel):
+    id: str
+    message: Dict[str, Any]
+    role: str
+    created_at: datetime
+
+    class Config:
+        orm_mode = True

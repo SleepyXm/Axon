@@ -1,79 +1,170 @@
-from fastapi import APIRouter, HTTPException, Depends, Cookie
+from fastapi import APIRouter, HTTPException, Body, Depends
 from fastapi import Response
 from fastapi.responses import JSONResponse
 from passlib.context import CryptContext
 from database import database
-from routers.auth_utils import create_access_token, get_current_user
+from routers.auth_utils import get_current_user
 import uuid
-from schemas import UserCreate, UserLogin
+from schemas import MessageOut
+import json
+import zlib
+import uuid
+from typing import List, Dict, Any
+from datetime import datetime
+from pydantic import BaseModel
 
 router = APIRouter()
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-def hash_password(password: str):
-    return pwd_context.hash(password)
+class MessageChunkOut(BaseModel):
+    messages: List[MessageOut]
 
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+class CreateConversationRequest(BaseModel):
+    title: str
+    llm_model: str
 
-@router.post("/signup")
-async def signup(user: UserCreate):
-    query = "SELECT * FROM users WHERE username = :username"
-    existing_user = await database.fetch_one(query=query, values={"username": user.username})
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Username taken, try another.")
-    
-    hashed_pw = hash_password(user.password)
-    insert_query = """
-    INSERT INTO users (id, username, password, created_at)
-    VALUES (:id, :username, :password, NOW())
+# Helpers for compression
+def compress_messages(messages: List["MessageOut"]) -> bytes:
+    return zlib.compress(json.dumps(
+        [m.dict() for m in messages],
+        default=lambda o: o.isoformat() if isinstance(o, datetime) else o
+    ).encode("utf-8"))
+
+def decompress_messages(data: bytes) -> List["MessageOut"]:
+    if not data:
+        return []
+    raw = zlib.decompress(data)
+    items = json.loads(raw)
+    # convert created_at back into datetime objects
+    for m in items:
+        if "created_at" in m and isinstance(m["created_at"], str):
+            try:
+                m["created_at"] = datetime.fromisoformat(m["created_at"])
+            except Exception:
+                pass
+    return [MessageOut(**m) for m in items]
+
+def append_messages(existing_compressed: bytes, new_messages: List[Dict[str, Any]]) -> bytes:
+    messages = decompress_messages(existing_compressed)
+    now = datetime.utcnow()
+    messages.extend([
+        MessageOut(
+            id=str(uuid.uuid4()),
+            message=m,  # raw JSON from frontend
+            role=m.get("role", "user"),
+            created_at=now
+        ) for m in new_messages
+    ])
+    return compress_messages(messages)
+
+@router.post("/{conversation_id}/chunk")
+async def save_chunk(
+    conversation_id: str,
+    messages: List[Dict[str, Any]] = Body(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Save a new chunk of messages in the database.
+    Only the owner of the conversation can append.
+    """
+    # fetch existing conversation
+    query = "SELECT compressed_messages, user_id FROM conversations WHERE id = :conversation_id"
+    row = await database.fetch_one(query=query, values={"conversation_id": conversation_id})
+
+    if row and row["user_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="You do not own this conversation")
+
+    existing_compressed = row["compressed_messages"] if row and row["compressed_messages"] else b""
+    compressed = append_messages(existing_compressed, messages)
+
+    if row:
+        # update existing conversation
+        update_query = """
+            UPDATE conversations
+            SET compressed_messages = :compressed_messages,
+                updated_at = NOW()
+            WHERE id = :conversation_id
+        """
+        await database.execute(query=update_query, values={
+            "compressed_messages": compressed,
+            "conversation_id": conversation_id
+        })
+    else:
+        # insert new conversation with ownership
+        insert_query = """
+            INSERT INTO conversations (id, user_id, compressed_messages, created_at, updated_at)
+            VALUES (:conversation_id, :user_id, :compressed_messages, NOW(), NOW())
+        """
+        await database.execute(query=insert_query, values={
+            "conversation_id": conversation_id,
+            "user_id": current_user["id"],
+            "compressed_messages": compressed
+        })
+
+    return {"status": "ok", "chunk_size": len(messages)}
+
+
+@router.get("/{conversation_id}/chunk")
+async def load_chunks(conversation_id: str, current_user: dict = Depends(get_current_user)):
+    """
+    Load all messages for a conversation from BYTEA and decompress.
+    Only the owner can fetch messages.
+    """
+    query = "SELECT compressed_messages, user_id FROM conversations WHERE id = :conversation_id"
+    row = await database.fetch_one(query=query, values={"conversation_id": conversation_id})
+
+    if not row or not row["compressed_messages"]:
+        raise HTTPException(status_code=404, detail="No conversation found")
+
+    if row["user_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="You do not own this conversation")
+
+    messages = decompress_messages(row["compressed_messages"])
+    return {"messages": [m.dict() for m in messages]}
+
+@router.post("/create")
+async def create_conversation(
+    req: CreateConversationRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    # Check if conversation already exists
+    query_check = """
+        SELECT id FROM conversations
+        WHERE user_id = :user_id AND llm_model = :llm_model
+    """
+    existing = await database.fetch_one(query=query_check, values={
+        "user_id": current_user["id"],
+        "llm_model": req.llm_model
+    })
+
+    if existing:
+        return {"id": existing["id"]}  # just return existing conversation
+
+    # Otherwise create new conversation
+    conversation_id = str(uuid.uuid4())
+    now = datetime.utcnow()
+    query_insert = """
+        INSERT INTO conversations (id, user_id, llm_model, created_at, updated_at)
+        VALUES (:id, :user_id, :llm_model, :created_at, :updated_at)
     """
     await database.execute(
-        query=insert_query,
+        query=query_insert,
         values={
-            "id": str(uuid.uuid4()),
-            "username": user.username,
-            "password": hashed_pw,
+            "id": conversation_id,
+            "user_id": current_user["id"],
+            "llm_model": req.llm_model,
+            "created_at": now,
+            "updated_at": now,
         }
     )
-    return {"message": "User created successfully"}
+    return {"id": conversation_id}
 
 
+@router.get("/list")
+async def list_conversations(current_user: dict = Depends(get_current_user)):
+    """
+    List all conversations for the current user.
+    """
+    query = "SELECT id, llm_model, created_at, updated_at FROM conversations WHERE user_id = :user_id ORDER BY updated_at DESC"
+    rows = await database.fetch_all(query=query, values={"user_id": current_user["id"]})
 
-@router.post("/login")
-async def login(user: UserLogin, response: Response):
-    query = "SELECT * FROM users WHERE username = :username"
-    db_user = await database.fetch_one(query=query, values={"username": user.username})
-
-    if not db_user or not verify_password(user.password, db_user["password"]):
-        raise HTTPException(status_code=400, detail="Username or Password Incorrect.")
-
-    access_token = create_access_token(str(db_user["id"]))
-
-    # Set JWT as HttpOnly cookie
-    resp = JSONResponse(content={"message": "Login successful", "token": access_token})
-    resp.set_cookie(
-        key="access_token",
-        value=f"Bearer {access_token}",
-        httponly=True,
-        max_age=60 * 60 * 24 * 7,  # 7 days expiry
-        expires=60 * 60 * 24 * 7,
-        path="/",
-        secure=False,  # Set True in production with HTTPS
-        samesite="lax",
-        domain="localhost",
-    )
-
-    # Return the correct token in response
-    return resp
-
-@router.get("/me")
-async def me(current_user: dict = Depends(get_current_user)):
-    # Returns 401 automatically if no valid cookie
-    return {"username": current_user["username"]}
-
-@router.post("/logout")
-async def logout(response: Response):
-    # Clear cookies/session here
-    response.delete_cookie("access_token")  # or however you handle sessions
-    return {"message": "Logged out successfully"}
+    return {"conversations": [{"id": row["id"], "llm_model": row["llm_model"]} for row in rows]}

@@ -1,5 +1,5 @@
 import { useUser } from "@/app/handlers/UserProvider";
-import { addHfToken as apiAdd, deleteHfToken as apiDelete } from "../types/auth";
+import { addHfToken as apiAdd, deleteHfToken as apiDelete } from "@/app/types/tokens";
 import toast from "react-hot-toast";
 
 export const useHfTokens = () => {

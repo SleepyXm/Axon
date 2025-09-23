@@ -1,40 +1,15 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import rehypeHighlight from "rehype-highlight";
 import ReactMarkdown from "react-markdown";
-import { addFavLLM } from "../types/auth";
-
+import { addFavLLM } from "../types/fav";
+import { createConversation } from "../types/chat";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
 }
 
-/*
-let buffer: Message[] = [];
-
-function addMessage(msg: Message) {
-    buffer.push(msg);
-
-    if (buffer.length >=10) {
-        pushToBackend(buffer);
-        buffer = [];
-    }
-}
-
-async function pushToBackend(messages: Message[]) {
-    await fetch("/llm/chat/conversation", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            user_id: currentUserId,
-            llm_model: modelId,
-            messages: messages,
-        }),
-    });
-}
-
-*/
 export default function Chat() {
   const params = useParams();
   const modelId = `${params.author}/${params.model}`;
@@ -53,24 +28,46 @@ export default function Chat() {
   };
 
   const CHUNK_SIZE = 5;
-  let currentChunk: Message[] = [];
+  const currentChunk = useRef<Message[]>([]);
+  const [currentConversationId, setCurrentConversationId] = useState<
+    string | null
+  >(null);
 
   const sendMessage = async () => {
     if (!input.trim()) return;
 
+    // 1️⃣ If no conversation exists, create one
+    if (!currentConversationId) {
+      const defaultTitle = `Conversation ${new Date().toLocaleString()}`;
+      try {
+        const conv = await createConversation(defaultTitle, modelId);
+        setCurrentConversationId(conv.id);
+      } catch (err) {
+        console.error("Failed to create conversation:", err);
+        return; // abort sending message
+      }
+    }
+
     const userMessage: Message = { role: "user", content: input };
     setMessages((prev) => [...prev, userMessage]);
-
-    currentChunk.push(userMessage);
-
-    const existingTempUser = JSON.parse(
-      localStorage.getItem("currentChunkTemp") || "[]"
-    );
-    existingTempUser.push(userMessage);
-    localStorage.setItem("currentChunkTemp", JSON.stringify(existingTempUser));
-
+    currentChunk.current.push(userMessage);
     setInput("");
 
+    // 2️⃣ Flush chunk if size reached
+    if (currentChunk.current.length >= CHUNK_SIZE && currentConversationId) {
+      await fetch(
+        `http://localhost:8000/conversation/${currentConversationId}/chunk`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(currentChunk.current),
+        }
+      );
+      currentChunk.current = [];
+    }
+
+    // 3️⃣ Stream assistant response (unchanged)
     try {
       const response = await fetch("http://localhost:8000/llm/chat/stream", {
         method: "POST",
@@ -108,41 +105,8 @@ export default function Chat() {
           });
         }
       }
-
-      const finalAssistantMessage: Message = {
-        role: "assistant",
-        content: partial,
-      };
-      currentChunk.push(finalAssistantMessage);
-
-      const existingTempAssistant = JSON.parse(
-        localStorage.getItem("currentChunkTemp") || "[]"
-      );
-      existingTempAssistant.push(finalAssistantMessage);
-      localStorage.setItem(
-        "currentChunkTemp",
-        JSON.stringify(existingTempAssistant)
-      );
-
-      if (currentChunk.length >= CHUNK_SIZE * 2) {
-        const existingChunks = JSON.parse(
-          localStorage.getItem("conversationChunks") || "[]"
-        );
-        existingChunks.push({
-          messages: currentChunk,
-          llm_model: modelId,
-          created_at: new Date().toISOString(),
-        });
-        localStorage.setItem(
-          "conversationChunks",
-          JSON.stringify(existingChunks)
-        );
-
-        currentChunk = [];
-        localStorage.removeItem("currentChunkTemp");
-      }
     } catch (err) {
-      console.error(err);
+      console.error("Error streaming assistant response:", err);
     }
   };
 
