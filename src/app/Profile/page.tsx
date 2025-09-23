@@ -1,9 +1,9 @@
 "use client";
-import AuraBackground7 from "@/app/components/background7";
-import { logout } from "@/app/components/auth";
+import AuraBackground7 from "@/app/assets/background7";
+import { logout } from "@/app/types/auth";
 import { useState, useEffect } from "react";
-import { useUser } from "../components/UserProvider";
-import { addHfToken, deleteHfToken } from "@/app/components/auth";
+import { useUser } from "../handlers/UserProvider";
+import { addHfToken, deleteHfToken } from "@/app/types/auth";
 
 export default function Profile() {
   const [activeTab, setActiveTab] = useState("account");

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams } from "next/navigation";
 import rehypeHighlight from "rehype-highlight";
 import ReactMarkdown from "react-markdown";
+import { addFavLLM } from "../types/auth";
 
 
 interface Message {
@@ -39,8 +40,17 @@ export default function Chat() {
   const modelId = `${params.author}/${params.model}`;
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
-  const [ isFav, setIsFav ] = useState(false);
+  const [isFav, setIsFav] = useState(false);
 
+  const handleFavClick = async () => {
+    try {
+      const data = await addFavLLM(`${params.author}/${params.model}`);
+      console.log(data.message);
+      setIsFav(true);
+    } catch (err: any) {
+      console.error("Failed to favorite LLM:", err.message);
+    }
+  };
 
   const CHUNK_SIZE = 5;
   let currentChunk: Message[] = [];
@@ -51,16 +61,13 @@ export default function Chat() {
     const userMessage: Message = { role: "user", content: input };
     setMessages((prev) => [...prev, userMessage]);
 
-    
     currentChunk.push(userMessage);
 
-    
     const existingTempUser = JSON.parse(
       localStorage.getItem("currentChunkTemp") || "[]"
     );
     existingTempUser.push(userMessage);
     localStorage.setItem("currentChunkTemp", JSON.stringify(existingTempUser));
-    
 
     setInput("");
 
@@ -87,7 +94,6 @@ export default function Chat() {
         if (value) {
           partial += decoder.decode(value, { stream: true });
 
-          
           setMessages((prev) => {
             const newMessages = [...prev];
             const lastMsg = newMessages[newMessages.length - 1];
@@ -103,14 +109,12 @@ export default function Chat() {
         }
       }
 
-      
       const finalAssistantMessage: Message = {
         role: "assistant",
         content: partial,
       };
       currentChunk.push(finalAssistantMessage);
 
-      
       const existingTempAssistant = JSON.parse(
         localStorage.getItem("currentChunkTemp") || "[]"
       );
@@ -119,11 +123,8 @@ export default function Chat() {
         "currentChunkTemp",
         JSON.stringify(existingTempAssistant)
       );
-     
 
       if (currentChunk.length >= CHUNK_SIZE * 2) {
-        
-
         const existingChunks = JSON.parse(
           localStorage.getItem("conversationChunks") || "[]"
         );
@@ -137,7 +138,6 @@ export default function Chat() {
           JSON.stringify(existingChunks)
         );
 
-        
         currentChunk = [];
         localStorage.removeItem("currentChunkTemp");
       }
@@ -148,17 +148,15 @@ export default function Chat() {
 
   return (
     <div className="rounded-2xl border border-white/10 bg-black/60 backdrop-blur p-2 shadow-2xl flex flex-col w-full max-w-[30vw] h-[80vh] mt-16">
-
       <h2 className="text-xl font-bold mt-4 text-white text-center flex items-center justify-center gap-2">
         {params.model}
         <button
-        onClick={() => setIsFav(!isFav)}
-        className="text-white text-l cursor-pointer bg-transparent border-none"
-      >
-        {isFav ? '★' : '☆'}
-      </button>
+          onClick={handleFavClick}
+          className="text-white text-l cursor-pointer bg-transparent border-none"
+        >
+          {isFav ? "★" : "☆"}
+        </button>
       </h2>
-
 
       <div className="flex-1 overflow-y-auto px-2 pb-2 mb-2 flex flex-col mt-4">
         {messages.map((m, i) => (
@@ -213,7 +211,6 @@ export default function Chat() {
           </svg>
         </button>
       </div>
-
 
       <div className="px-2 pb-2 mt-2">
         <p className="mt-2 text-[11px] text-gray-500">

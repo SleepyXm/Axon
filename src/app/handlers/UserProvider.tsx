@@ -1,6 +1,6 @@
 "use client";
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { checkAuth } from "./auth";
+import { checkAuth } from "../types/auth";
 
 export type User = {
     username: string;

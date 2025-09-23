@@ -1,7 +1,7 @@
 import { useState, useContext } from "react";
-import { UserContext } from "./UserProvider";
+import { UserContext } from "../handlers/UserProvider";
 import { FaCalendarAlt } from "react-icons/fa"; // only if needed for dropdown icons
-import { logout } from "./auth";
+import { logout } from "../types/auth";
 
 const Navbar = () => {
   const { user } = useContext(UserContext)!;

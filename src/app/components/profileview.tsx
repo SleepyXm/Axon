@@ -1,4 +1,4 @@
-import { logout } from "./auth";
+import { logout } from "../types/auth";
 
 type User = {
   username: string;

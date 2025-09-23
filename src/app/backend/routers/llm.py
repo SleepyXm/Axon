@@ -5,6 +5,7 @@ from typing import List, Dict
 from openai import OpenAI
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
+from schemas import ChatRequest, Message
 
 import os
 
@@ -20,16 +21,6 @@ client = OpenAI(
 # class ChatRequest(BaseModel):
 #    modelId: str
 #    conversation: List[Dict[str, str]]  # {"role": "user"/"assistant", "content": str}
-
-
-class Message(BaseModel):
-    role: str
-    content: str
-
-
-class ChatRequest(BaseModel):
-    modelId: str
-    conversation: list[Message]
 
 
 @router.post("/chat/stream")
@@ -50,7 +41,7 @@ async def chat_stream(req: ChatRequest):
             conversation.append(system_msg)
 
         stream = client.chat.completions.create(
-            model=f"{req.modelId}:together",
+            model=f"{req.modelId}",
             messages=conversation,
             stream=True,
         )

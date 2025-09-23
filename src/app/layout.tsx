@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Manrope } from "next/font/google";
 import ClientWrapper from "./ClientWrapper";
-import { UserProvider } from "./components/UserProvider"; // <-- assumed done
+import { UserProvider } from "./handlers/UserProvider"; // <-- assumed done
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

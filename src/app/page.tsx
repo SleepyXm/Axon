@@ -3,7 +3,7 @@
 import Image from "next/image";
 import ModelExplorer from "./components/Search";
 import { motion, easeOut } from "framer-motion";
-import AuraBackground7 from "./components/background7";
+import AuraBackground7 from "./assets/background7";
 
 const fadeIn = {
   hidden: { opacity: 0, y: 20 },

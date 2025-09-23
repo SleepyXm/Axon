@@ -34,9 +34,21 @@ class UserOut(BaseModel):
     password: str
     created_at: datetime
 
-class FavLLM(BaseModel):
-    llm_id: str
-    user_id: str
-
     class Config:
         orm_mode = True
+
+class FavLLM(BaseModel):
+    hf_id: str
+
+class AddLLMRequest(BaseModel):
+    llm_id: str
+    llm_name: str
+
+class Message(BaseModel):
+    role: str
+    content: str
+
+
+class ChatRequest(BaseModel):
+    modelId: str
+    conversation: list[Message]

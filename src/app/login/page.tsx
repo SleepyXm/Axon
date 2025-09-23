@@ -3,8 +3,8 @@
 import { Manrope } from "next/font/google";
 import { useState } from "react";
 import { motion, easeOut, TargetAndTransition } from "framer-motion";
-import { signup, login } from "@/app/components/auth";
-import AuraBackground7 from "@/app/components/background7";
+import { signup, login } from "@/app/types/auth";
+import AuraBackground7 from "@/app/assets/background7";
 
 const manrope = Manrope({ subsets: ["latin"], weight: ["400", "200"] });
 

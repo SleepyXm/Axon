@@ -1,20 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
-
-interface Model {
-  id: string;
-  author: string;
-  downloads: number;
-  numParameters: number;
-  pipeline_tag: string;
-	availableInferenceProviders: string;
-  authorData: {
-    avatarUrl: string;
-    fullname: string;
-  };
-}
+import { Model } from "../types/models";
 
 export default function ModelExplorer() {
   const [models, setModels] = useState<Model[]>([]);
@@ -166,6 +154,9 @@ export default function ModelExplorer() {
             </div>
             <div className="text-sm text-gray-300 mb-1">
               Type: {model.pipeline_tag}
+            </div>
+            <div className="text-sm text-gray-300 mb-1">
+              Inference Provider: {model.availableInferenceProviders?.map(p => p.provider)[0]}
             </div>
           </div>
         ))}

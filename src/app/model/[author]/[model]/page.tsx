@@ -1,14 +1,11 @@
 "use client";
 
-import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
 import Chat from "@/app/components/Chat";
 import Conversation from "@/app/components/Conversations";
 import Tooling from "@/app/components/Tooling";
-import AuraBackground7 from "@/app/components/background7";
+import AuraBackground7 from "@/app/assets/background7";
 
 export default function ChatPage() {
-  const params = useParams();
 
  return (
       <div

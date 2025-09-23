@@ -13,7 +13,7 @@ export async function GET(req: Request) {
   }
 
   // Construct the Hugging Face API URL dynamically
-  const url = `https://huggingface.co/models-json?sort=${sortBy}&search=${searchTerm}&withCount=${withCount}`;
+  const url = `https://huggingface.co/models-json?inference_provider=all&sort=${sortBy}&search=${searchTerm}&withCount=${withCount}`;
 
   try {
     const res = await fetch(url);
