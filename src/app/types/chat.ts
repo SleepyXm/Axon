@@ -1,5 +1,28 @@
 import { request } from "./auth";
 
+export interface Message {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface ChatContextType {
+  currentConversationId: string | null;
+  setCurrentConversationId: (id: string | null) => void;
+  messages: Message[];
+  setMessages: (msgs: Message[]) => void;
+}
+
+export interface ConversationItem {
+  id: string;
+  llm_model: string;
+}
+
+export interface ConversationMessages {
+  messages: Message[],
+  user_id: string,
+  llm_model: string,
+}
+
 export async function createConversation(title: string, modelId: string) {
   const data = await request("/conversation/create", {
     method: "POST",

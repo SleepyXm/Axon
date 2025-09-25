@@ -2,13 +2,9 @@ import { useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import rehypeHighlight from "rehype-highlight";
 import ReactMarkdown from "react-markdown";
-import { addFavLLM } from "../types/fav";
-import { createConversation } from "../types/chat";
-
-interface Message {
-  role: "user" | "assistant";
-  content: string;
-}
+import { handleFavClick } from "@/app/hooks/interactive";
+import { Message } from "../types/chat";
+import { sendMessage } from "@/app/hooks/interactive";
 
 export default function Chat() {
   const params = useParams();
@@ -17,105 +13,15 @@ export default function Chat() {
   const [input, setInput] = useState("");
   const [isFav, setIsFav] = useState(false);
 
-  const handleFavClick = async () => {
-    try {
-      const data = await addFavLLM(`${params.author}/${params.model}`);
-      console.log(data.message);
-      setIsFav(true);
-    } catch (err: any) {
-      console.error("Failed to favorite LLM:", err.message);
-    }
-  };
-
-  const CHUNK_SIZE = 5;
   const currentChunk = useRef<Message[]>([]);
-  const [currentConversationId, setCurrentConversationId] = useState<
-    string | null
-  >(null);
-
-  const sendMessage = async () => {
-    if (!input.trim()) return;
-
-    // 1️⃣ If no conversation exists, create one
-    if (!currentConversationId) {
-      const defaultTitle = `Conversation ${new Date().toLocaleString()}`;
-      try {
-        const conv = await createConversation(defaultTitle, modelId);
-        setCurrentConversationId(conv.id);
-      } catch (err) {
-        console.error("Failed to create conversation:", err);
-        return; // abort sending message
-      }
-    }
-
-    const userMessage: Message = { role: "user", content: input };
-    setMessages((prev) => [...prev, userMessage]);
-    currentChunk.current.push(userMessage);
-    setInput("");
-
-    // 2️⃣ Flush chunk if size reached
-    if (currentChunk.current.length >= CHUNK_SIZE && currentConversationId) {
-      await fetch(
-        `http://localhost:8000/conversation/${currentConversationId}/chunk`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify(currentChunk.current),
-        }
-      );
-      currentChunk.current = [];
-    }
-
-    // 3️⃣ Stream assistant response (unchanged)
-    try {
-      const response = await fetch("http://localhost:8000/llm/chat/stream", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          modelId: modelId,
-          conversation: [...messages, userMessage],
-        }),
-      });
-
-      if (!response.body) throw new Error("No response body");
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let done = false;
-      let partial = "";
-
-      while (!done) {
-        const { value, done: readerDone } = await reader.read();
-        done = readerDone;
-        if (value) {
-          partial += decoder.decode(value, { stream: true });
-
-          setMessages((prev) => {
-            const newMessages = [...prev];
-            const lastMsg = newMessages[newMessages.length - 1];
-
-            if (lastMsg?.role === "assistant") {
-              lastMsg.content = partial;
-            } else {
-              newMessages.push({ role: "assistant", content: partial });
-            }
-
-            return newMessages;
-          });
-        }
-      }
-    } catch (err) {
-      console.error("Error streaming assistant response:", err);
-    }
-  };
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
 
   return (
     <div className="rounded-2xl border border-white/10 bg-black/60 backdrop-blur p-2 shadow-2xl flex flex-col w-full max-w-[30vw] h-[80vh] mt-16">
       <h2 className="text-xl font-bold mt-4 text-white text-center flex items-center justify-center gap-2">
         {params.model}
         <button
-          onClick={handleFavClick}
+          onClick={() => handleFavClick(modelId, setIsFav)}
           className="text-white text-l cursor-pointer bg-transparent border-none"
         >
           {isFav ? "★" : "☆"}
@@ -148,13 +54,36 @@ export default function Chat() {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+          onKeyDown={(e) =>
+            e.key === "Enter" &&
+            sendMessage({
+              input,
+              setInput,
+              messages,
+              setMessages,
+              currentConversationId,
+              setCurrentConversationId,
+              currentChunk,
+              modelId,
+            })
+          }
           className="flex-1 bg-transparent outline-none text-sm placeholder:text-gray-500 px-1 text-white"
           placeholder="Type a message..."
         />
 
         <button
-          onClick={sendMessage}
+          onClick={() =>
+            sendMessage({
+              input,
+              setInput,
+              messages,
+              setMessages,
+              currentConversationId,
+              setCurrentConversationId,
+              currentChunk,
+              modelId,
+            })
+          }
           className="inline-flex items-center gap-2 px-3 h-9 rounded-lg bg-blue-400 text-black hover:bg-blue-300 transition"
         >
           Send

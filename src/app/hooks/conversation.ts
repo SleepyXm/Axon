@@ -1,0 +1,69 @@
+import { ConversationItem } from "../types/chat";
+import { useState, useEffect } from "react";
+
+
+export const useConversations = () => {
+  const [conversations, setConversations] = useState<ConversationItem[]>([]);
+
+  useEffect(() => {
+    const fetchConversations = async () => {
+      try {
+        const res = await fetch("http://localhost:8000/conversation/list", {
+          credentials: "include",
+        });
+        if (!res.ok) throw new Error("Failed to fetch conversations");
+        const data = await res.json();
+        setConversations(data.conversations);
+      } catch (err) {
+        console.error("Error fetching conversations:", err);
+      }
+    };
+
+    fetchConversations();
+  }, []);
+
+  return { conversations };
+};
+
+export const fetchConversations = async (conversationId: string) => {
+  try {
+    const res = await fetch(`http://localhost:8000/conversation/${conversationId}/chunk`, {
+      credentials: "include",
+    });
+
+    if (!res.ok) throw new Error("Failed to fetch conversation");
+
+    const data = await res.json();
+    return data.messages; // array of decompressed messages
+  } catch (err) {
+    console.error("Error fetching conversation:", err);
+    return [];
+  }
+};
+
+/*
+useEffect(() => {
+    if (!currentConversationId) return;
+
+    const fetchMessages = async () => {
+      try {
+        const res = await fetch(
+          `http://localhost:8000/conversations/${currentConversationId}/chunk`,
+          {
+            credentials: "include",
+          }
+        );
+
+        if (!res.ok) throw new Error("Failed to fetch messages");
+
+        const data = await res.json();
+        setMessages(data.messages); // decompressed messages go straight into state
+        currentChunk.current = data.messages; // optional, keep ref updated
+      } catch (err) {
+        console.error("Error fetching messages:", err);
+      }
+    };
+
+    fetchMessages();
+  }, [currentConversationId]);
+*/
