@@ -1,12 +1,12 @@
 "use client";
-import { useState } from "react";
+
 import Chat from "@/app/components/Chat";
 import Conversation from "@/app/components/Conversations";
 import Tooling from "@/app/components/Tooling";
 import AuraBackground7 from "@/app/assets/background7";
 
 export default function ChatPage() {
-  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  
 
  return (
       <div
@@ -22,6 +22,7 @@ export default function ChatPage() {
         <AuraBackground7 />
         <Chat />
         <Tooling />
-        <Conversation onSelectConversation={(id) => setCurrentConversationId(id)} />
+        <Conversation />
       </div>
-    )}
+    )
+  }

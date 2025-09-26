@@ -67,3 +67,13 @@ useEffect(() => {
     fetchMessages();
   }, [currentConversationId]);
 */
+
+const conversationBus = new EventTarget();
+
+export function emitConversationSelected(id: string) {
+  conversationBus.dispatchEvent(new CustomEvent("conversationSelected", { detail: id }));
+}
+
+export function onConversationSelected(callback: (id: string) => void) {
+  conversationBus.addEventListener("conversationSelected", (e: any) => callback(e.detail));
+}

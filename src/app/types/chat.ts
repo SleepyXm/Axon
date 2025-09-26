@@ -2,7 +2,13 @@ import { request } from "./auth";
 
 export interface Message {
   role: "user" | "assistant";
-  content: string;
+  content: string;       // required for your internal messages
+  id?: string;           // optional for API messages
+  message?: {            // optional for API messages
+    role: "user" | "assistant";
+    content: string;
+  };
+  created_at?: string;   // optional for API messages
 }
 
 export interface ChatContextType {

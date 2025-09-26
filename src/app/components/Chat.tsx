@@ -1,10 +1,14 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useParams } from "next/navigation";
 import rehypeHighlight from "rehype-highlight";
 import ReactMarkdown from "react-markdown";
 import { handleFavClick } from "@/app/hooks/interactive";
 import { Message } from "../types/chat";
 import { sendMessage } from "@/app/hooks/interactive";
+import {
+  onConversationSelected,
+  fetchConversations,
+} from "../hooks/conversation";
 
 export default function Chat() {
   const params = useParams();
@@ -14,7 +18,16 @@ export default function Chat() {
   const [isFav, setIsFav] = useState(false);
 
   const currentChunk = useRef<Message[]>([]);
-  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  const [currentConversationId, setCurrentConversationId] = useState<
+    string | null
+  >(null);
+
+  useEffect(() => {
+    onConversationSelected(async (id) => {
+      const msgs = await fetchConversations(id);
+      setMessages(msgs);
+    });
+  }, []);
 
   return (
     <div className="rounded-2xl border border-white/10 bg-black/60 backdrop-blur p-2 shadow-2xl flex flex-col w-full max-w-[30vw] h-[80vh] mt-16">
@@ -31,18 +44,20 @@ export default function Chat() {
       <div className="flex-1 overflow-y-auto px-2 pb-2 mb-2 flex flex-col mt-4">
         {messages.map((m, i) => (
           <div
-            key={i}
+            key={m.id ?? i}
             className={`my-1 p-2 rounded inline-block max-w-[70%] break-words mt-8 rounded-xl ${
-              m.role === "user"
+              (m.message?.role ?? m.role) === "user"
                 ? "bg-gray-800 text-white ml-auto text-right"
                 : "bg-white/0 text-white mr-auto text-left"
             }`}
           >
-            {m.role === "user" ? (
-              <div className="whitespace-pre-wrap">{m.content}</div>
+            {(m.message?.role ?? m.role) === "user" ? (
+              <div className="whitespace-pre-wrap">
+                {m.message?.content ?? m.content}
+              </div>
             ) : (
               <ReactMarkdown rehypePlugins={[rehypeHighlight]}>
-                {m.content}
+                {m.message?.content ?? m.content}
               </ReactMarkdown>
             )}
           </div>
