@@ -1,5 +1,6 @@
 import { addFavLLM } from "../types/fav";
 import { Message, createConversation } from "../types/chat";
+import { fetchConversations } from "./conversation";
 
 export const handleFavClick = async (
   modelId: string | undefined,
@@ -40,17 +41,23 @@ export const sendMessage = async ({
 }) => {
   if (!input.trim()) return;
 
-  // 1️⃣ Conversation creation
+  // 1️⃣ Ensure we have a conversation ID
+  let conversationId = currentConversationId;
   if (!currentConversationId) {
-    const defaultTitle = `Conversation ${new Date().toLocaleString()}`;
-    try {
-      const conv = await createConversation(defaultTitle, modelId);
-      setCurrentConversationId(conv.id);
-    } catch (err) {
-      console.error(err);
-      return;
-    }
+  // 1️⃣ Create a new conversation
+  const defaultTitle = `Conversation ${new Date().toLocaleString()}`;
+  try {
+    const conv = await createConversation(defaultTitle, modelId);
+    setCurrentConversationId(conv.id); // update state
+
+    // 2️⃣ Immediately fetch its messages (probably empty, but keeps UI consistent)
+    const messages = await fetchConversations(conv.id);
+    setMessages(messages); // optional: pre-populate UI with loaded messages
+  } catch (err) {
+    console.error(err);
+    return;
   }
+}
 
   // 2️⃣ Append user message
   const userMessage: Message = { role: "user", content: input };
@@ -58,18 +65,19 @@ export const sendMessage = async ({
   currentChunk.current.push(userMessage);
   setInput("");
 
-  // 3️⃣ Flush chunk if needed
-  if (currentChunk.current.length >= 5 && currentConversationId) {
-    await fetch(
-      `http://localhost:8000/conversation/${currentConversationId}/chunk`,
-      {
+  // 3️⃣ Flush chunk if threshold reached
+  if (currentChunk.current.length >= 5 && conversationId) {
+    try {
+      await fetch(`http://localhost:8000/conversation/${conversationId}/chunk`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify(currentChunk.current),
-      }
-    );
-    currentChunk.current = [];
+      });
+      currentChunk.current = [];
+    } catch (err) {
+      console.error("Error flushing chunk:", err);
+    }
   }
 
   // 4️⃣ Stream assistant response
@@ -96,31 +104,35 @@ export const sendMessage = async ({
         setMessages((prev) => {
           const newMessages = [...prev];
           const lastMsg = newMessages[newMessages.length - 1];
-          if (lastMsg?.role === "assistant") lastMsg.content = partial;
-          else newMessages.push({ role: "assistant", content: partial });
+          if (lastMsg?.role === "assistant") {
+            lastMsg.content = partial;
+          } else {
+            newMessages.push({ role: "assistant", content: partial });
+          }
           return newMessages;
         });
       }
     }
 
-    // ✅ After streaming finishes, push final assistant message into the chunk
+    // ✅ Push final assistant message into the chunk
     const assistantMessage: Message = { role: "assistant", content: partial };
     currentChunk.current.push(assistantMessage);
 
-    // Optional: flush chunk if it reaches threshold after assistant response
-    if (currentChunk.current.length >= 5 && currentConversationId) {
-      await fetch(
-        `http://localhost:8000/conversation/${currentConversationId}/chunk`,
-        {
+    // Flush again if threshold reached
+    if (currentChunk.current.length >= 5 && conversationId) {
+      try {
+        await fetch(`http://localhost:8000/conversation/${conversationId}/chunk`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify(currentChunk.current),
-        }
-      );
-      currentChunk.current = [];
+        });
+        currentChunk.current = [];
+      } catch (err) {
+        console.error("Error flushing chunk after assistant:", err);
+      }
     }
   } catch (err) {
-    console.error(err);
+    console.error("Error streaming assistant:", err);
   }
 };

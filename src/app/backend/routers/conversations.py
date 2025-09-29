@@ -126,25 +126,14 @@ async def create_conversation(
     req: CreateConversationRequest,
     current_user: dict = Depends(get_current_user)
 ):
-    # Check if conversation already exists
-    query_check = """
-        SELECT id FROM conversations
-        WHERE user_id = :user_id AND llm_model = :llm_model
     """
-    existing = await database.fetch_one(query=query_check, values={
-        "user_id": current_user["id"],
-        "llm_model": req.llm_model
-    })
-
-    if existing:
-        return {"id": existing["id"]}  # just return existing conversation
-
-    # Otherwise create new conversation
+    Always create a new conversation for the user, even if one exists for the same model.
+    """
     conversation_id = str(uuid.uuid4())
     now = datetime.utcnow()
     query_insert = """
-        INSERT INTO conversations (id, user_id, llm_model, created_at, updated_at)
-        VALUES (:id, :user_id, :llm_model, :created_at, :updated_at)
+        INSERT INTO conversations (id, user_id, llm_model, title, created_at, updated_at)
+        VALUES (:id, :user_id, :llm_model, :title :created_at, :updated_at)
     """
     await database.execute(
         query=query_insert,
@@ -152,6 +141,7 @@ async def create_conversation(
             "id": conversation_id,
             "user_id": current_user["id"],
             "llm_model": req.llm_model,
+            "title": req.title or "Untitled Conversation",
             "created_at": now,
             "updated_at": now,
         }
