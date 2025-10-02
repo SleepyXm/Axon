@@ -4,7 +4,7 @@ from openai import OpenAI
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 from schemas import ChatRequest
-from search import get_top_paragraphs
+from search import get_top_paragraphs, should_search
 
 import os
 
@@ -30,7 +30,7 @@ async def chat_stream(req: ChatRequest):
         # Inject system message dynamically
         last_user_input = conversation[-1]["content"] if conversation else ""
 
-        # 1️⃣ Optional: Inject current date (existing)
+        # Optional: Inject current date (existing)
         if "current date" in last_user_input.lower() or "today" in last_user_input.lower():
             system_msg = {
                 "role": "system",
@@ -38,15 +38,16 @@ async def chat_stream(req: ChatRequest):
             }
             conversation.append(system_msg)
 
-        # 2️⃣ Check if we need to call the search (simple confidence/trigger logic)
+        # Check if we need to call the search (simple confidence/trigger logic)
         # For now, let's just always fetch for demonstration
-        search_paragraphs = get_top_paragraphs(last_user_input)  # your DuckDuckGo scraper
-        if search_paragraphs:
-            context_msg = {
-                "role": "system",
-                "content": "Context from external sources:\n" + "\n\n".join(search_paragraphs)
-            }
-            conversation.append(context_msg)
+        if should_search(last_user_input):
+            search_paragraphs = get_top_paragraphs(last_user_input)
+            if search_paragraphs:
+                context_msg = {
+                    "role": "system",
+                    "content": "Context from external sources:\n" + "\n\n".join(search_paragraphs)
+                    }
+                conversation.append(context_msg)
 
         stream = client.chat.completions.create(
             model=f"{req.modelId}",

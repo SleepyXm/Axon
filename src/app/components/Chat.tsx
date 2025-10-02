@@ -9,7 +9,6 @@ import {
   onConversationSelected,
   fetchConversations,
 } from "../hooks/conversation";
-import { createConversation } from "../types/chat";
 
 export default function Chat() {
   const params = useParams();

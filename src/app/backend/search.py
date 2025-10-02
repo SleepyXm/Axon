@@ -2,6 +2,11 @@ import requests
 from bs4 import BeautifulSoup
 import urllib.parse
 
+def should_search(user_input: str) -> bool:
+    triggers = ["search", "look up", "find info", "google", "can you check", "what does the internet say"]
+    text = user_input.lower()
+    return any(trigger in text for trigger in triggers)
+
 def duckduckgo_search(query, num_results=3):
     encoded_query = urllib.parse.quote_plus(query)
     url = f"https://duckduckgo.com/html/?q={encoded_query}"

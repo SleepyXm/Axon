@@ -2,7 +2,7 @@ import { request } from "./auth";
 
 export interface Message {
   role: "user" | "assistant";
-  content: string;       // required for your internal messages
+  content: string;       // required for internal messages
   id?: string;           // optional for API messages
   message?: {            // optional for API messages
     role: "user" | "assistant";

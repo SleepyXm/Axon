@@ -9,7 +9,7 @@ export default function ModelExplorer() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 🔹 Controls
+  // Controls
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("trending");
 

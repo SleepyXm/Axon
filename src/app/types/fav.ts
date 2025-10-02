@@ -18,7 +18,7 @@ export async function addFavLLM(llmId: string): Promise<FavLLMResponse> {
       body: JSON.stringify({ hf_id: llmId }), // backend expects hf_id
     });
 
-    // If your request util throws on non-2xx, this line may never run
+    // If request util throws on non-2xx, this line may never run
     return data;
   } catch (err: any) {
     // err might already be the parsed JSON error from the server

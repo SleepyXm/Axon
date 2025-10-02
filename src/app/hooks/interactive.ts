@@ -41,25 +41,25 @@ export const sendMessage = async ({
 }) => {
   if (!input.trim()) return;
 
-  // 1️⃣ Ensure we have a conversation ID
+  // Ensure we have a conversation ID
   let conversationId = currentConversationId;
   if (!currentConversationId) {
-  // 1️⃣ Create a new conversation
-  const defaultTitle = `Conversation ${new Date().toLocaleString()}`;
-  try {
-    const conv = await createConversation(defaultTitle, modelId);
-    setCurrentConversationId(conv.id); // update state
+    // Create a new conversation
+    const defaultTitle = `Conversation ${new Date().toLocaleString()}`;
+    try {
+      const conv = await createConversation(defaultTitle, modelId);
+      setCurrentConversationId(conv.id); // update state
 
-    // 2️⃣ Immediately fetch its messages (probably empty, but keeps UI consistent)
-    const messages = await fetchConversations(conv.id);
-    setMessages(messages); // optional: pre-populate UI with loaded messages
-  } catch (err) {
-    console.error(err);
-    return;
+      // Immediately fetch its messages (probably empty, but keeps UI consistent)
+      const messages = await fetchConversations(conv.id);
+      setMessages(messages); // pre-populate UI with loaded messages
+    } catch (err) {
+      console.error(err);
+      return;
+    }
   }
-}
 
-  // 2️⃣ Append user message
+  // Append user message
   const userMessage: Message = { role: "user", content: input };
   setMessages((prev) => [...prev, userMessage]);
   currentChunk.current.push(userMessage);
@@ -68,24 +68,30 @@ export const sendMessage = async ({
   // 3️⃣ Flush chunk if threshold reached
   if (currentChunk.current.length >= 5 && conversationId) {
     try {
-      await fetch(`http://localhost:8000/conversation/${conversationId}/chunk`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(currentChunk.current),
-      });
+      await fetch(
+        `http://localhost:8000/conversation/${conversationId}/chunk`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(currentChunk.current),
+        }
+      );
       currentChunk.current = [];
     } catch (err) {
       console.error("Error flushing chunk:", err);
     }
   }
 
-  // 4️⃣ Stream assistant response
+  // Stream assistant response
   try {
     const response = await fetch("http://localhost:8000/llm/chat/stream", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ modelId, conversation: [...messages, userMessage] }),
+      body: JSON.stringify({
+        modelId,
+        conversation: [...messages, userMessage],
+      }),
     });
 
     if (!response.body) throw new Error("No response body");
@@ -114,19 +120,22 @@ export const sendMessage = async ({
       }
     }
 
-    // ✅ Push final assistant message into the chunk
+    // Push final assistant message into the chunk
     const assistantMessage: Message = { role: "assistant", content: partial };
     currentChunk.current.push(assistantMessage);
 
-    // Flush again if threshold reached
-    if (currentChunk.current.length >= 5 && conversationId) {
+    // Always flush after assistant finishes
+    if (conversationId) {
       try {
-        await fetch(`http://localhost:8000/conversation/${conversationId}/chunk`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify(currentChunk.current),
-        });
+        await fetch(
+          `http://localhost:8000/conversation/${conversationId}/chunk`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(currentChunk.current),
+          }
+        );
         currentChunk.current = [];
       } catch (err) {
         console.error("Error flushing chunk after assistant:", err);

@@ -3,7 +3,7 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.chat_models import ChatOpenAI
 from langchain.chains import RetrievalQA
 
-# 1️⃣ Setup embeddings and vector DB
+# Setup embeddings and vector DB
 embeddings = OpenAIEmbeddings()
 
 # Load or create vector DB
