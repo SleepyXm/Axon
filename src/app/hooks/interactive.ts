@@ -49,6 +49,7 @@ export const sendMessage = async ({
     try {
       const conv = await createConversation(defaultTitle, modelId);
       setCurrentConversationId(conv.id); // update state
+      conversationId = conv.id;
 
       // Immediately fetch messages (probably empty, but keeps UI consistent)
       const messages = await fetchConversations(conv.id);
@@ -65,7 +66,7 @@ export const sendMessage = async ({
   currentChunk.current.push(userMessage);
   setInput("");
 
-  // 3️⃣ Flush chunk if threshold reached
+  // Flush chunk if threshold reached
   if (currentChunk.current.length >= 5 && conversationId) {
     try {
       await fetch(
@@ -85,7 +86,7 @@ export const sendMessage = async ({
 
   // Stream assistant response
   try {
-    const response = await fetch("http://localhost:8000/llm/chat/stream", {
+    const response = await fetch(`http://localhost:8000/llm/chat/stream?conversation_id=${conversationId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

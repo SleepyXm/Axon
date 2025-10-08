@@ -121,23 +121,12 @@ async def create_conversation(
     req: CreateConversationRequest,
     current_user: dict = Depends(get_current_user)
 ):
-    """
-    Always create a new conversation for the user, even if one exists for the same model.
-    If no title is provided, generate one using the LLM.
-    Needs some fucking work bozo
-    """
     conversation_id = str(uuid.uuid4())
     now = datetime.utcnow()
 
-    # 🔮 Generate title if not provided
-    if not req.title:
-        # The first message text (or placeholder if none)
-        first_message = getattr(req, "first_message", "") or "New conversation"
-        req.title = await generate_conversation_title(req.llm_model, first_message)
-
     query_insert = """
         INSERT INTO conversations (id, user_id, llm_model, title, created_at, updated_at)
-        VALUES (:id, :user_id, :llm_model, :title, :created_at, :updated_at)
+        VALUES (:id, :user_id, :llm_model, NULL, :created_at, :updated_at)
     """
     await database.execute(
         query=query_insert,
@@ -145,12 +134,12 @@ async def create_conversation(
             "id": conversation_id,
             "user_id": current_user["id"],
             "llm_model": req.llm_model,
-            "title": req.title,
             "created_at": now,
             "updated_at": now,
         }
     )
-    return {"id": conversation_id, "title": req.title}
+    # return null title since LLM will handle it later
+    return {"id": conversation_id, "title": None}
 
 
 @router.get("/list")
