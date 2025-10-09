@@ -106,5 +106,3 @@ async def chat_stream(req: ChatRequest, conversation_id: str):
             yield delta
 
     return StreamingResponse(event_generator(), media_type="text/plain")
-
-# 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
