@@ -35,23 +35,20 @@ class Message(BaseModel):
     role: str
     content: str
 
-class ChatRequest(BaseModel):
-    modelId: str
-    hfToken: str
-    conversation: list[Message]
-
-
-class MessageOut(BaseModel):
+class StoredMessage(BaseModel):
     id: str
     message: Dict[str, Any]
     role: str
     created_at: datetime
+    metadata: Dict[str, Any] = {}
 
     class Config:
         orm_mode = True
 
-class MessageChunkOut(BaseModel):
-    messages: List[MessageOut]
+class ChatRequest(BaseModel):
+    modelId: str
+    hfToken: str
+    conversation: List[Message]
 
 class CreateConversationRequest(BaseModel):
     title: str

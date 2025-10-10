@@ -2,8 +2,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import database
 from routers import auth, profile, llm, tokens, user, conversations
-from dotenv import load_dotenv
-import os
 
 app = FastAPI()
 

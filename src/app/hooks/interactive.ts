@@ -118,6 +118,30 @@ async function flushChunk(conversationId: string, currentChunk: React.MutableRef
   }
 }
 
+function getContextMessages(messages: Message[], userMessage: Message, options?: { rootCount?: number, recentCount?: number }) {
+  const rootCount = options?.rootCount ?? 2;
+  const recentCount = options?.recentCount ?? 8;
+
+  let memory: Message[] = [];
+
+  if (messages.length <= rootCount + recentCount) {
+    memory = [...messages];
+  } else {
+    memory = [
+      ...messages.slice(0, rootCount),
+      ...messages.slice(-recentCount)
+    ];
+  }
+
+  // Preprocess: trim content
+  const preprocessed = memory.map(msg => ({
+    role: msg.role,
+    content: msg.content.trim(),
+  }));
+
+  return [...preprocessed, userMessage];
+}
+
 export const sendMessage = async (args: {
   input: string;
   setInput: React.Dispatch<React.SetStateAction<string>>;
@@ -138,5 +162,6 @@ export const sendMessage = async (args: {
 
   if (currentChunk.current.length >= 5) await flushChunk(conversationId, currentChunk);
 
-  await streamAssistantResponse(conversationId, [...messages, userMessage], modelId, hfToken, setMessages, currentChunk);
+  const conversationWithMemory = getContextMessages(messages, userMessage, { rootCount: 2, recentCount: 8 });
+  await streamAssistantResponse(conversationId, conversationWithMemory, modelId, hfToken, setMessages, currentChunk);
 };
