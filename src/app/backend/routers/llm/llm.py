@@ -1,21 +1,23 @@
 from fastapi.responses import StreamingResponse
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, UploadFile, File
 from openai import OpenAI
 from datetime import datetime
 from schemas import ChatRequest
-from search import get_top_paragraphs, should_search
 from database import database
 from helpers import ConversationManager
+from .tooling import LLMTooling# chunk_and_embed, read_pdf
+from typing import List
 
 router = APIRouter()
 
 class LLM:
-    def __init__(self, model_id: str, hf_token: str):
+    def __init__(self, model_id: str, hf_token: str, tooling: LLMTooling = None):
         self.model_id = model_id
         self.client = OpenAI(
             base_url="https://router.huggingface.co/v1",
             api_key=hf_token,
         )
+        self.tooling = tooling
         
     async def generate_conversation_title(self, conversation_snippet: str) -> str:
         messages = [
@@ -38,6 +40,16 @@ class LLM:
         return response.choices[0].message.content.strip()
     
     async def stream_response(self, messages: list[dict]):
+        last_user_input = messages[-1]["content"] if messages else ""
+        if self.tooling:
+            context = await self.tooling.handle_input(last_user_input)
+            if context:
+                messages.append({
+                    "role": "system",
+                    "content": context,
+                })
+
+
         stream = self.client.chat.completions.create(
             model=self.model_id,
             messages=messages,
@@ -102,10 +114,7 @@ async def build_llm_memory(manager: ConversationManager, recent_n: int = 20):
 @router.post("/chat/stream")
 async def chat_stream(req: ChatRequest, conversation_id: str):
     async def event_generator():
-        # Instantiate LLM per request
-        llm = LLM(model_id=req.modelId, hf_token=req.hfToken)
-
-        # --- Fetch user_id from conversation record internally ---
+        # --- Fetch user_id from conversation record ---
         conversation_record = await database.fetch_one(
             "SELECT user_id FROM conversations WHERE id = :conversation_id",
             {"conversation_id": conversation_id}
@@ -117,33 +126,45 @@ async def chat_stream(req: ChatRequest, conversation_id: str):
         # --- Load ephemeral memory ---
         manager = ConversationManager(conversation_id, internal_user_id)
         memory_snapshot = await manager.get_memory_snapshot(recent_n=20)
-
-        # --- Merge memory snapshot with current user conversation ---
         conversation = memory_snapshot + [m.dict() for m in req.conversation]
 
-        # Attempt to generate title if it hasn't been done yet
+        # --- Instantiate LLM with tooling ---
+        tooling = LLMTooling()
+        # Add other tools like vector DB or RAG later as needed
+
+        llm = LLM(model_id=req.modelId, hf_token=req.hfToken, tooling=tooling)
+
+        # --- Attempt to generate title ---
         await try_generate_title(conversation_id, llm, conversation)
 
+        # --- Inject dynamic system message for current date ---
         last_user_input = conversation[-1]["content"] if conversation else ""
-
-        # Inject dynamic system message for current date
         if "current date" in last_user_input.lower() or "today" in last_user_input.lower():
             conversation.append({
                 "role": "system",
                 "content": f"The current date is {datetime.now().strftime('%B %d, %Y')}.",
             })
 
-        # Inject search results if needed
-        if should_search(last_user_input):
-            search_paragraphs = get_top_paragraphs(last_user_input)
-            if search_paragraphs:
-                conversation.append({
-                    "role": "system",
-                    "content": "Context from external sources:\n" + "\n\n".join(search_paragraphs),
-                })
-
-        # Stream the assistant response
+        # --- Stream the assistant response ---
         async for delta in llm.stream_response(conversation):
             yield delta
 
     return StreamingResponse(event_generator(), media_type="text/plain")
+
+vector_store = {}
+
+@router.post("/consume")
+async def consume_files(files: List[UploadFile] = File(...)):
+    received_files = []
+
+    for file in files:
+        # You can keep PDF/text detection if needed
+        if file.filename.endswith((".pdf", ".md")):
+            # Optional: just read raw bytes or text for logging
+            _ = await file.read()  
+        else:
+            _ = await file.read()
+        
+        received_files.append(file.filename)
+        # Optionally store raw bytes just for verification
+        vector_store[file.filename] = b"<file received>"

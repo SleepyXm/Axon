@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, Cookie
 from database import database
-from routers.auth_utils import get_current_user
+from routers.auth.auth_utils import get_current_user
 from schemas import HFTokenRequest
 import json
 

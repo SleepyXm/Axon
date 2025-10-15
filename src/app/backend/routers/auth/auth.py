@@ -3,7 +3,7 @@ from fastapi import Response
 from fastapi.responses import JSONResponse
 from passlib.context import CryptContext
 from database import database
-from routers.auth_utils import create_access_token, get_current_user
+from routers.auth.auth_utils import create_access_token, get_current_user
 import uuid
 from schemas import UserCreate, UserLogin, HFTokenRequest, FavLLM
 import json

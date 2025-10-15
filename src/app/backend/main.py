@@ -1,7 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from routers.auth import auth
+from routers.llm import llm
+from routers.user import profile, tokens, user
 from database import database
-from routers import auth, profile, llm, tokens, user, conversations
+from routers.conversations import conversations
 
 app = FastAPI()
 
