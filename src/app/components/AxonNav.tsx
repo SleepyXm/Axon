@@ -58,8 +58,8 @@ const Navbar = () => {
             >
               <defs>
                 <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#74d4cfff" />
-                  <stop offset="100%" stopColor="#7edd7eff" />
+                  <stop offset="0%" stopColor="#8cd4d0ff" />
+                  <stop offset="100%" stopColor="#8bcc8bff" />
                 </linearGradient>
               </defs>
               <text
