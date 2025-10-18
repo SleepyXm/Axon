@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, easeOut, TargetAndTransition } from "framer-motion";
 import { signup, login } from "@/app/types/auth";
+import { useUser } from "../handlers/UserProvider";
+
 
 const fadeIn = {
   hidden: { opacity: 0, y: 20 },
@@ -15,6 +17,7 @@ const fadeIn = {
 };
 
 export default function Auth() {
+  const { setUser } = useUser();
   const [userName, setUserName] = useState("");
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
@@ -33,6 +36,7 @@ export default function Auth() {
       console.log("Signed up:", res.message);
     } else {
       const res = await login(userName, password);
+      setUser(res);
       console.log("Logged in token:", res.token);
       router.push("/");
     }

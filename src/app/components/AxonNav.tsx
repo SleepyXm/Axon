@@ -1,12 +1,19 @@
+"use client";
 import { useState, useContext } from "react";
-import { UserContext } from "../handlers/UserProvider";
+import { useUser } from "../handlers/UserProvider";
 import { logout } from "../types/auth";
 import { useRouter } from "next/navigation";
 
 const Navbar = () => {
-  const { user } = useContext(UserContext)!;
+  const { user, setUser } = useUser();
   const [mobileOpen, setMobileOpen] = useState(false);
   const router = useRouter();
+
+  const handleLogout = async () => {
+    await logout();
+    setUser(null);
+    router.push("/")
+  };
 
   const links = [
     { label: "Home", url: "/" },
@@ -19,7 +26,7 @@ const Navbar = () => {
           url: "/Profile"
         },
           {
-            label: "Sign out", onClick: async () => { await logout();},
+            label: "Sign out", onClick: handleLogout,
           },
         ]
       : [

@@ -16,7 +16,7 @@ export default function Profile() {
 
   if (!user) return <div>Loading...</div>;
 
-  const { username, password, hf_token, email } = user;
+  const { username, hf_token, email } = user;
 
   return (
     <div className="min-h-screen flex justify-center items-start pt-[10vh] relative">
