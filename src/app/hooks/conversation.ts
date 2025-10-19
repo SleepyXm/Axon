@@ -1,10 +1,10 @@
 import { ConversationItem } from "../types/chat";
 import { useState, useEffect } from "react";
 
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
 
 export const useConversations = () => {
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
-  const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
 
   useEffect(() => {
     const fetchConversations = async () => {
