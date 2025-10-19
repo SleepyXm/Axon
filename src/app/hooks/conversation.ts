@@ -15,8 +15,9 @@ export const useConversations = () => {
         if (!res.ok) throw new Error("Failed to fetch conversations");
         const data = await res.json();
         setConversations(data.conversations);
-      } catch (err) {
-        console.error("Error fetching conversations:", err);
+      } catch (err: unknown) {
+        const error = err instanceof Error ? err : new Error("Unknown error");
+        console.error("Error fetching conversations:", error.message);
       }
     };
 
@@ -35,14 +36,13 @@ export const fetchConversations = async (conversationId: string) => {
     if (!res.ok) throw new Error("Failed to fetch conversation");
 
     const data = await res.json();
-    return data.messages; // array of decompressed messages
-  } catch (err) {
-    console.error("Error fetching conversation:", err);
+    return data.messages;
+  } catch (err: unknown) {
+    const error = err instanceof Error ? err : new Error("Unknown error");
+    console.error("Error fetching conversation:", error.message);
     return [];
   }
 };
-
-
 
 const conversationBus = new EventTarget();
 
@@ -51,5 +51,11 @@ export function emitConversationSelected(id: string) {
 }
 
 export function onConversationSelected(callback: (id: string) => void) {
-  conversationBus.addEventListener("conversationSelected", (e: any) => callback(e.detail));
+  conversationBus.addEventListener(
+    "conversationSelected",
+    (e: Event) => {
+      const event = e as CustomEvent;
+      callback(event.detail);
+    }
+  );
 }
