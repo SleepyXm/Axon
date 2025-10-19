@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion, easeOut, TargetAndTransition } from "framer-motion";
+import { easeOut } from "framer-motion";
 import { signup, login } from "@/app/types/auth";
 import { useUser } from "../handlers/UserProvider";
 
