@@ -7,7 +7,6 @@ import { Model } from "../types/models";
 export default function ModelExplorer() {
   const [models, setModels] = useState<Model[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   // Controls
   const [searchTerm, setSearchTerm] = useState("");
@@ -45,7 +44,6 @@ export default function ModelExplorer() {
 
     try {
       setLoading(true);
-      setError(null);
 
       const res = await fetch(
         `/api/models?search=${encodeURIComponent(
@@ -58,7 +56,7 @@ export default function ModelExplorer() {
       const data = await res.json();
       setModels(data.models || []);
     } catch (err: any) {
-      setError(err.message || "Unknown error");
+      console.error(err.message || "Unknown error");
     } finally {
       setLoading(false);
     }
