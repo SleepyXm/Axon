@@ -1,5 +1,5 @@
 "use client";
-import { useState, useContext } from "react";
+import { useState } from "react";
 import { useUser } from "../handlers/UserProvider";
 import { logout } from "../types/auth";
 import { useRouter } from "next/navigation";
