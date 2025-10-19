@@ -56,7 +56,3 @@ export async function removeFavLLM(hfId: string): Promise<FavLLMResponse> {
     throw error;
   }
 }
-
-  const data: FavLLMResponse = await res.json();
-  return data;
-}
