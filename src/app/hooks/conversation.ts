@@ -4,11 +4,12 @@ import { useState, useEffect } from "react";
 
 export const useConversations = () => {
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
 
   useEffect(() => {
     const fetchConversations = async () => {
       try {
-        const res = await fetch("http://localhost:8000/conversation/list", {
+        const res = await fetch(`${API_BASE}/conversation/list`, {
           credentials: "include",
         });
         if (!res.ok) throw new Error("Failed to fetch conversations");
@@ -27,7 +28,7 @@ export const useConversations = () => {
 
 export const fetchConversations = async (conversationId: string) => {
   try {
-    const res = await fetch(`http://localhost:8000/conversation/${conversationId}/chunk`, {
+    const res = await fetch(`${API_BASE}/conversation/${conversationId}/chunk`, {
       credentials: "include",
     });
 
