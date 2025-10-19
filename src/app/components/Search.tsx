@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Model } from "../types/models";
+import Image from "next/image"
 
 export default function ModelExplorer() {
   const [models, setModels] = useState<Model[]>([]);
@@ -139,10 +140,12 @@ export default function ModelExplorer() {
             key={model.id}
             className="flex flex-col border border-white/10 rounded-2xl bg-black/60 p-3 shadow-2xl hover:border-teal-400 transition ease-in-out duration-350"
           >
-            <img
+            <Image
               src={model.authorData.avatarUrl}
               alt={model.authorData.fullname}
-              className="w-10 h-10 rounded-full mb-2"
+              width={40}
+              height={40}
+              className="rounded-full mb-2"
             />
             <a
               href={`/model/${model.id}`}
