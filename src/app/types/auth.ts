@@ -3,7 +3,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
 export async function request(path: string, options: RequestInit) {
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
-    credentials: "include", // send/receive cookies
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...(options.headers || {}),
@@ -11,24 +11,34 @@ export async function request(path: string, options: RequestInit) {
   });
 
   const data = await res.json();
-  if (!res.ok) throw new Error(data.detail || "Request failed");
+
+  if (!res.ok) {
+    throw new Error(data.detail || `Request failed with status ${res.status}`);
+  }
+
   return data;
 }
 
-export async function checkAuth(): Promise<any | null> {
+export async function checkAuth(): Promise<{ username: string; hf_token: string[] } | null> {
   try {
-    const data = await request("/auth/me", {
+    const res = await fetch(`${API_BASE}/auth/me`, {
       method: "GET",
       credentials: "include",
+      headers: { "Content-Type": "application/json" },
     });
 
-    // Keep everything else exactly as it was
-    if (!data.username) return null;
-
-    // Only change: ensure hf_token exists as an array
-    if (!data.hf_token) {
-      data.hf_token = data.hf_tokens || [];
+    if (res.status === 401) {
+      return null;
     }
+
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.detail || `Request failed with status ${res.status}`);
+    }
+
+    const data = await res.json();
+    if (!data.username) return null;
+    if (!data.hf_token) data.hf_token = [];
 
     return data;
   } catch (err: unknown) {
@@ -37,6 +47,7 @@ export async function checkAuth(): Promise<any | null> {
     return null;
   }
 }
+
 
 export async function signup(username: string, password: string) {
   return request("/auth/signup", {
