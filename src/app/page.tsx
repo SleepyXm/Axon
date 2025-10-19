@@ -14,7 +14,7 @@ export default function Home() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <h1 className="text-7xl font-semibold text-white w-full flex items-center justify-center whitespace-nowrap ml-0">
+          <h1 className="text-7xl font-semibold text-white w-full flex items-center justify-center whitespace-nowrap ml-14">
             {" "}
             <svg
               width="auto"
@@ -41,7 +41,7 @@ export default function Home() {
           </h1>
         </motion.div>
 
-        <div className="mt-[-16] mr-30">
+        <div className="mt-[-16]">
           Control your Intelligence.
         </div>
 
