@@ -54,10 +54,11 @@ export default function ModelExplorer() {
 
       if (!res.ok) throw new Error("Failed to fetch models");
 
-      const data = await res.json();
+      const data: { models: Model[] } = await res.json();
       setModels(data.models || []);
-    } catch (err: any) {
-      console.error(err.message || "Unknown error");
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error("Unknown error");
+      console.error(error.message);
     } finally {
       setLoading(false);
     }
