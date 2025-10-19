@@ -1,6 +1,6 @@
 import { request } from "./auth";
 
-const API_BASE=process.env.NEXT_PUBLIC_API_BASE;
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
 
 export interface FavLLMRequest {
   llm_id: string;
