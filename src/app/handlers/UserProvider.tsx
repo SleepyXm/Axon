@@ -4,9 +4,7 @@ import { checkAuth } from "../types/auth";
 
 export type User = {
     username: string;
-    password: string;
     hf_token: string[];
-    email?: string;
 };
 
 export interface UserContextType {
