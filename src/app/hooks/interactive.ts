@@ -17,8 +17,9 @@ export const handleFavClick = async (
     const data = await addFavLLM(modelId);
     console.log(data.message);
     setIsFav(true);
-  } catch (err: any) {
-    console.error("Failed to favorite LLM:", err.message);
+  } catch (err: unknown) {
+    const error = err instanceof Error ? err : new Error("Unknown error");
+    console.error("Failed to favorite LLM:", error.message);
   }
 };
 
@@ -39,7 +40,6 @@ async function ensureConversation(
 
   return conv.id;
 }
-
 
 function appendUserMessage(
   input: string,
@@ -99,8 +99,9 @@ async function streamAssistantResponse(
     currentChunk.current.push(assistantMessage);
     await flushChunk(conversationId, currentChunk);
 
-  } catch (err) {
-    console.error("Error streaming assistant:", err);
+  } catch (err: unknown) {
+    const error = err instanceof Error ? err : new Error("Unknown error");
+    console.error("Error streaming assistant:", error.message);
   }
 }
 
@@ -115,12 +116,13 @@ async function flushChunk(conversationId: string, currentChunk: React.MutableRef
       body: JSON.stringify(currentChunk.current),
     });
     currentChunk.current = [];
-  } catch (err) {
-    console.error("Error flushing chunk:", err);
+  } catch (err: unknown) {
+    const error = err instanceof Error ? err : new Error("Unknown error");
+    console.error("Error flushing chunk:", error.message);
   }
 }
 
-function getContextMessages(messages: Message[], userMessage: Message, options?: { rootCount?: number, recentCount?: number }) {
+function getContextMessages(messages: Message[], userMessage: Message, options?: { rootCount?: number; recentCount?: number }) {
   const rootCount = options?.rootCount ?? 2;
   const recentCount = options?.recentCount ?? 8;
 
