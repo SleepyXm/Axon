@@ -28,12 +28,13 @@ export default function Chat() {
   >(null);
 
   useEffect(() => {
-    const tokens = listHfTokens();
-    if (tokens) { 
-        setHfTokens(tokens);
-        setActiveToken(tokens[0] ?? "");
-    }
-  });
+  const tokens = listHfTokens();
+  if (tokens && tokens.length > 0) {
+    setHfTokens(tokens);
+
+    setActiveToken(prev => prev || tokens[0]);
+  }
+  }, []);
 
 
   useEffect(() => {
