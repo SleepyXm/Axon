@@ -18,8 +18,12 @@ export default function Chat() {
   const [input, setInput] = useState("");
   const [isFav, setIsFav] = useState(false);
   const { listHfTokens } = useHfTokens();
-  const [hfTokens, setHfTokens] = useState<string[]>(() => listHfTokens());
-  const [activeToken, setActiveToken] = useState(() => listHfTokens()[0] ?? "");
+  
+  const initialTokens = listHfTokens();
+  const [hfTokens, setHfTokens] = useState<string[]>(initialTokens);
+  const [activeToken, setActiveToken] = useState<string | undefined>(
+    initialTokens[0]
+  );
 
 
   const currentChunk = useRef<Message[]>([]);
@@ -27,13 +31,13 @@ export default function Chat() {
     string | null
   >(null);
 
-  useEffect(() => { 
+  useEffect(() => {
     const tokens = listHfTokens();
-    if (tokens) {
+    if (JSON.stringify(tokens) !== JSON.stringify(hfTokens)) {
       setHfTokens(tokens);
-      setActiveToken(tokens[0] ?? "");
+      setActiveToken(prev => prev ?? tokens[0]);
     }
-  });
+  }, [listHfTokens, hfTokens]);
 
 
   useEffect(() => {
