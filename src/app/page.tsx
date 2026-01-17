@@ -49,7 +49,7 @@ export default function Home() {
           </h1>
         </motion.div>
 
-        <p className="text-center text-white/80 text-base pr-[24%] justify-center sm:text-lg md:text-xl md:pl-[24%]">
+        <p className="text-center text-white/80 text-base pr-[25%] justify-center sm:text-lg md:text-xl md:pl-[25%]">
           Control your Intelligence.
         </p>
 
