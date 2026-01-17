@@ -21,7 +21,7 @@ export default function Home() {
                 </linearGradient>
               </defs>
               <text
-                x="34%"
+                x="35%"
                 y="50%"
                 textAnchor="middle"
                 dominantBaseline="middle"
@@ -49,7 +49,7 @@ export default function Home() {
           </h1>
         </motion.div>
 
-        <p className="text-center text-white/80 text-base pr-[28.5%] justify-center sm:text-lg md:text-xl md:pl-[28.5%]">
+        <p className="text-center text-white/80 text-base pr-[24%] justify-center sm:text-lg md:text-xl md:pl-[24%]">
           Control your Intelligence.
         </p>
 
