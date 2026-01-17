@@ -13,16 +13,26 @@ export default function Home() {
           transition={{ duration: 0.6 }}
         >
           <h1 className="flex items-center justify-center">
-            <svg
-              viewBox="0 0 400 80"
-              className="h-24 sm:h-16 md:h-28"
-            >
+            <svg viewBox="0 0 400 80" className="w-full h-24 sm:h-16 md:h-28">
               <defs>
                 <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
                   <stop offset="0%" stopColor="#74d4cfff" />
                   <stop offset="100%" stopColor="#7edd7eff" />
                 </linearGradient>
               </defs>
+              <text
+                x="35%"
+                y="50%"
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fontSize="68"
+                fontWeight="200"
+                fill="url(#grad1)"
+                className="sm:hidden"
+              >
+                Synapse
+              </text>
+
               <text
                 x="50%"
                 y="50%"
@@ -31,6 +41,7 @@ export default function Home() {
                 fontSize="68"
                 fontWeight="200"
                 fill="url(#grad1)"
+                className="hidden sm:block"
               >
                 Synapse
               </text>
