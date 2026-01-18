@@ -14,11 +14,11 @@ export default function ChatPage() {
           "items-center",
           "justify-center",
           "h-screen",
-          "p-4",
         ].join(" ")}
       >
-        <Chat /> 
         <Conversation />
+        <Chat /> 
+        
         <Tooling />
       </div>
     )
