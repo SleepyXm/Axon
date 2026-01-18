@@ -1,8 +1,20 @@
+"use client";
+import { useState } from "react";
 import DatasetDropper from "./FileDropper";
 
 export default function Tooling() {
+  const [showTooling, setShowTooling] = useState(true);
+
     return (
-        <div className="hidden md:flex absolute md:left-[calc(50%+25vw)] bg-black/60 backdrop-blur p-2 shadow-2xl flex-col w-[25vw] h-[92vh] mt-20">
+        <div className={`hidden md:flex flex-col bg-black/60 backdrop-blur p-2 shadow-2xl
+    transition-all duration-300 h-[94vh] mt-20
+    ${showTooling ? "w-[25vw]" : "w-0 overflow-hidden"}`}>
+            <button
+        className="absolute top-3 px-2 py-1 right-[0.8rem] bg-teal-500 text-white rounded hover:bg-teal-400 transition"
+        onClick={() => setShowTooling(!showTooling)}
+      >
+        {showTooling ? "Hide" : "Show"}
+      </button>
           <h3 className="text-lg font-bold text-white text-center mb-4">Tools</h3>
           <div className="flex flex-col gap-3 flex-1">
 
